@@ -1,0 +1,20 @@
+# Production Requirements
+# Use this when deploying to production with PostgreSQL
+# Install with: pip install -r requirements-prod.txt
+
+Django>=5.2,<6.0
+djangorestframework>=3.15,<4.0
+django-cors-headers>=4.3.1
+python-decouple==3.8
+requests==2.31.0
+celery==5.3.4
+redis==5.0.1
+gunicorn==21.2.0
+python-dotenv==1.0.0
+Pillow==10.1.0
+# PostgreSQL database adapter
+psycopg2-binary==2.9.9
+# For WebSocket support
+daphne==4.0.0
+# Security
+django-cors-headers==4.3.1
