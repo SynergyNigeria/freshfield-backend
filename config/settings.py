@@ -13,7 +13,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key')
 
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.pythonanywhere.com').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -118,6 +118,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:3001',
     'http://127.0.0.1:3000',
+    'https://1e2f8925.freshfield.pages.dev',
     *[o.strip() for o in _cors_extra.split(',') if o.strip()],
 ]
 
