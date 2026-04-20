@@ -123,6 +123,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3001',
     'http://127.0.0.1:3000',
     'https://1e2f8925.freshfield.pages.dev',
+    'https://freshfieldsinc.com',
+    'https://www.freshfieldsinc.com',
     *[o.strip() for o in _cors_extra.split(',') if o.strip()],
 ]
 
