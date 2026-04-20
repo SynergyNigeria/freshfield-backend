@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile
+from .models import UserProfile, KYCSubmission, UserNotification, FAQ, SupportTicket
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -42,3 +42,29 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.save()
         UserProfile.objects.create(user=user)
         return user
+
+
+class KYCSubmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KYCSubmission
+        fields = ['id', 'id_document', 'selfie', 'status', 'admin_note', 'created_at', 'updated_at']
+        read_only_fields = ['status', 'admin_note', 'created_at', 'updated_at']
+
+
+class UserNotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserNotification
+        fields = ['id', 'title', 'message', 'is_read', 'created_at']
+
+
+class FAQSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FAQ
+        fields = ['id', 'question', 'answer']
+
+
+class SupportTicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupportTicket
+        fields = ['id', 'email', 'subject', 'message', 'status', 'admin_reply', 'created_at']
+        read_only_fields = ['status', 'admin_reply', 'created_at']

@@ -220,3 +220,60 @@ class MarketChartView(APIView):
                 'candles': mock_candles,
                 'live': False,
             })
+
+
+class MarketTrackerView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        coin_ids = ','.join([
+            'bitcoin',
+            'ethereum',
+            'solana',
+            'ripple',
+            'cardano',
+            'dogecoin',
+            'polkadot',
+            'avalanche-2',
+            'chainlink',
+            'litecoin',
+        ])
+        try:
+            response = requests.get(
+                'https://api.coingecko.com/api/v3/coins/markets',
+                params={
+                    'vs_currency': 'usd',
+                    'ids': coin_ids,
+                    'order': 'market_cap_desc',
+                    'sparkline': 'false',
+                    'price_change_percentage': '24h',
+                },
+                timeout=10,
+            )
+            response.raise_for_status()
+            rows = response.json()
+            data = [
+                {
+                    'symbol': row.get('symbol', '').upper(),
+                    'name': row.get('name', ''),
+                    'price': row.get('current_price'),
+                    'change_24h': row.get('price_change_percentage_24h'),
+                    'market_cap': row.get('market_cap'),
+                }
+                for row in rows
+            ]
+            return Response({'live': True, 'coins': data})
+        except requests.exceptions.RequestException:
+            fallback = [
+                {'symbol': 'BTC', 'name': 'Bitcoin', 'price': 66500, 'change_24h': 1.2, 'market_cap': 0},
+                {'symbol': 'ETH', 'name': 'Ethereum', 'price': 3200, 'change_24h': 0.9, 'market_cap': 0},
+                {'symbol': 'SOL', 'name': 'Solana', 'price': 145, 'change_24h': -0.3, 'market_cap': 0},
+                {'symbol': 'XRP', 'name': 'XRP', 'price': 0.62, 'change_24h': 0.6, 'market_cap': 0},
+                {'symbol': 'ADA', 'name': 'Cardano', 'price': 0.49, 'change_24h': -0.2, 'market_cap': 0},
+                {'symbol': 'DOGE', 'name': 'Dogecoin', 'price': 0.15, 'change_24h': 0.4, 'market_cap': 0},
+                {'symbol': 'DOT', 'name': 'Polkadot', 'price': 7.2, 'change_24h': -0.1, 'market_cap': 0},
+                {'symbol': 'AVAX', 'name': 'Avalanche', 'price': 34, 'change_24h': 0.5, 'market_cap': 0},
+                {'symbol': 'LINK', 'name': 'Chainlink', 'price': 17.8, 'change_24h': 0.3, 'market_cap': 0},
+                {'symbol': 'LTC', 'name': 'Litecoin', 'price': 84, 'change_24h': -0.4, 'market_cap': 0},
+            ]
+            return Response({'live': False, 'coins': fallback})

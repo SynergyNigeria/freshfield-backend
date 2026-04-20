@@ -47,6 +47,12 @@ class WithdrawalView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        if not request.user.profile.kyc_verified:
+            return Response({
+                'error': 'KYC_REQUIRED',
+                'message': 'KYC verification is required before withdrawing funds.'
+            }, status=status.HTTP_403_FORBIDDEN)
+
         serializer = WithdrawalSerializer(data=request.data)
         if serializer.is_valid():
             amount = serializer.validated_data['amount']
@@ -58,12 +64,20 @@ class WithdrawalView(APIView):
             wallet.balance -= amount
             wallet.save()
             
+            vd = serializer.validated_data
+            method = vd['method']
+            if method == 'BANK':
+                auto_desc = f"Bank: {vd['bank_name']} | Account: {vd['account_number']}"
+            else:
+                auto_desc = f"{vd['wallet_type']} Wallet: {vd['wallet_address']}"
+            description = vd.get('description') or auto_desc
+
             transaction = Transaction.objects.create(
                 wallet=wallet,
                 transaction_type='WITHDRAWAL',
                 amount=amount,
                 status='COMPLETED',
-                description=serializer.validated_data.get('description', 'Withdrawal'),
+                description=description,
                 transaction_id=str(uuid.uuid4())
             )
             

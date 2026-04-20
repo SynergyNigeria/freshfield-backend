@@ -1,6 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
 from decimal import Decimal
+import uuid
+
+
+def generate_transaction_id():
+    return str(uuid.uuid4())
 
 class Wallet(models.Model):
     CURRENCY_CHOICES = [
@@ -41,7 +46,7 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=15, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     description = models.TextField(blank=True, null=True)
-    transaction_id = models.CharField(max_length=100, unique=True)
+    transaction_id = models.CharField(max_length=100, unique=True, default=generate_transaction_id, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

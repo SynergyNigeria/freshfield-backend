@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     CryptoListView, PortfolioView, BuyInvestmentView,
-    SellInvestmentView, InvestmentHistoryView, MarketChartView
+    SellInvestmentView, InvestmentHistoryView, MarketChartView, MarketTrackerView
 )
 
 app_name = 'investment'
@@ -13,4 +13,5 @@ urlpatterns = [
     path('sell/', SellInvestmentView.as_view(), name='sell'),
     path('history/', InvestmentHistoryView.as_view(), name='history'),
     path('market/btc/', MarketChartView.as_view(), {'symbol': 'bitcoin'}, name='market-btc'),
+    path('market/tracker/', MarketTrackerView.as_view(), name='market-tracker'),
 ]
