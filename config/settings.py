@@ -62,12 +62,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# Database configuration - only use ssl_require for PostgreSQL, not SQLite
+_db_url = config('DATABASE_URL', default=f'sqlite:///{BASE_DIR / "db.sqlite3"}')
+_db_config = {'default': _db_url, 'conn_max_age': 600}
+
+# Only add ssl_require for non-SQLite databases
+if not _db_url.startswith('sqlite://'):
+    _db_config['ssl_require'] = not config('DEBUG', default=True, cast=bool)
+
 DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL', default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'),
-        conn_max_age=600,
-        ssl_require=not config('DEBUG', default=True, cast=bool),
-    )
+    'default': dj_database_url.config(**_db_config)
 }
 
 AUTH_PASSWORD_VALIDATORS = [
