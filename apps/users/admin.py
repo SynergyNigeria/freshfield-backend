@@ -40,7 +40,7 @@ class PortfolioInline(admin.StackedInline):
     model = Portfolio
     can_delete = False
     verbose_name_plural = 'Portfolio Stats'
-    fields = ['total_invested', 'total_profit', 'portfolio_amount', 'withdrawal_amount', 'withdrawal_note', 'kyc_note']
+    fields = ['total_invested', 'total_profit', 'portfolio_amount', 'withdrawal_amount', 'withdrawal_note', 'admin_withdraw_note', 'kyc_note']
     extra = 1
     max_num = 1
 

@@ -13,5 +13,5 @@ class CryptoAssetAdmin(admin.ModelAdmin):
 class PortfolioAdmin(admin.ModelAdmin):
     list_display = ['user', 'total_invested', 'portfolio_amount', 'withdrawal_amount', 'updated_at']
     search_fields = ['user__username', 'user__email']
-    fields = ['user', 'total_invested', 'portfolio_amount', 'total_profit', 'withdrawal_amount', 'withdrawal_note', 'kyc_note']
+    fields = ['user', 'total_invested', 'portfolio_amount', 'total_profit', 'withdrawal_amount', 'withdrawal_note', 'admin_withdraw_note', 'kyc_note']
 

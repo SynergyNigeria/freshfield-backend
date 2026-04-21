@@ -27,6 +27,11 @@ class Portfolio(models.Model):
         blank=True,
         default='You are ineligible for withdrawal above $1000 at the moment',
     )
+    admin_withdraw_note = models.TextField(
+        blank=True,
+        default='You will be notified about this transaction soon.',
+        verbose_name='Admin withdraw note',
+    )
     kyc_note = models.TextField(
         blank=True,
         default='No KYC, no withdrawal.',

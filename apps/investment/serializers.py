@@ -29,7 +29,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
         model = Portfolio
         fields = [
             'id', 'holdings', 'total_value',
-            'total_invested', 'total_profit', 'portfolio_amount', 'withdrawal_amount', 'withdrawal_note', 'kyc_note',
+            'total_invested', 'total_profit', 'portfolio_amount', 'withdrawal_amount', 'withdrawal_note', 'admin_withdraw_note', 'kyc_note',
             'updated_at',
         ]
 
