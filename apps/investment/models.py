@@ -22,6 +22,15 @@ class Portfolio(models.Model):
     total_invested = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
     total_profit = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
     portfolio_amount = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
+    withdrawal_amount = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
+    withdrawal_note = models.TextField(
+        blank=True,
+        default='You are ineligible for withdrawal above $1000 at the moment',
+    )
+    kyc_note = models.TextField(
+        blank=True,
+        default='No KYC, no withdrawal.',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

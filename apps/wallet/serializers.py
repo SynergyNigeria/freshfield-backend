@@ -25,7 +25,7 @@ class WithdrawalSerializer(serializers.Serializer):
     bank_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     account_number = serializers.CharField(max_length=50, required=False, allow_blank=True)
     # Wallet fields
-    wallet_type = serializers.ChoiceField(choices=['TRC20', 'ERC20'], required=False, allow_null=True)
+    wallet_type = serializers.ChoiceField(choices=['TRC20', 'ERC20', 'BTC'], required=False, allow_null=True)
     wallet_address = serializers.CharField(max_length=200, required=False, allow_blank=True)
     description = serializers.CharField(max_length=200, required=False)
 
