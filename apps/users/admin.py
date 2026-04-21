@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import UserProfile, KYCSubmission, UserNotification, FAQ, SupportTicket
+from .models import UserProfile, KYCSubmission, UserNotification, FAQ, SupportTicket, SupportMessage
 from apps.wallet.models import Wallet, Transaction
 from apps.investment.models import Portfolio
 
@@ -98,6 +98,19 @@ class SupportTicketAdmin(admin.ModelAdmin):
     list_display = ['user', 'email', 'subject', 'status', 'created_at']
     list_filter = ['status', 'created_at']
     search_fields = ['user__username', 'user__email', 'subject', 'message']
+
+
+@admin.register(SupportMessage)
+class SupportMessageAdmin(admin.ModelAdmin):
+    list_display = ['user', 'sender_is_admin', 'message_preview', 'is_read', 'created_at']
+    list_filter = ['sender_is_admin', 'is_read', 'created_at']
+    search_fields = ['user__username', 'user__email', 'message']
+    readonly_fields = ['created_at']
+    fields = ['user', 'sender_is_admin', 'message', 'is_read', 'created_at']
+
+    def message_preview(self, obj):
+        return obj.message[:60]
+    message_preview.short_description = 'Message'
 
 
 @admin.register(Transaction)

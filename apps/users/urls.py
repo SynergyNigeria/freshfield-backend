@@ -7,7 +7,9 @@ from .views import (
     KYCView,
     NotificationListView,
     NotificationReadView,
-    SupportView,
+    SupportChatView,
+    SupportUnreadView,
+    AdminSupportReplyView,
 )
 
 app_name = 'users'
@@ -20,5 +22,7 @@ urlpatterns = [
     path('kyc/', KYCView.as_view(), name='kyc'),
     path('notifications/', NotificationListView.as_view(), name='notifications'),
     path('notifications/<int:notification_id>/read/', NotificationReadView.as_view(), name='notification-read'),
-    path('support/', SupportView.as_view(), name='support'),
+    path('support/', SupportChatView.as_view(), name='support'),
+    path('support/unread/', SupportUnreadView.as_view(), name='support-unread'),
+    path('support/<int:user_id>/reply/', AdminSupportReplyView.as_view(), name='support-reply'),
 ]

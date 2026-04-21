@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from django.conf import settings
 from django.core.mail import send_mail
-from .models import KYCSubmission, UserNotification, FAQ, SupportTicket
+from .models import KYCSubmission, UserNotification, FAQ, SupportTicket, SupportMessage
 from .serializers import (
     UserSerializer,
     UserRegistrationSerializer,
@@ -14,6 +14,7 @@ from .serializers import (
     UserNotificationSerializer,
     FAQSerializer,
     SupportTicketSerializer,
+    SupportMessageSerializer,
 )
 
 class RegisterView(APIView):
@@ -179,43 +180,96 @@ class NotificationReadView(APIView):
         return Response({'message': 'Notification marked as read'})
 
 
-class SupportView(APIView):
+class SupportChatView(APIView):
+    """User: GET own messages, POST new message. Admin: GET list of chat threads."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        faqs = FAQ.objects.filter(is_active=True)
-        return Response({'faq': FAQSerializer(faqs, many=True).data})
+        if request.user.is_staff:
+            # Return list of unique users who have sent messages
+            from django.db.models import Max, Count, Q
+            threads = (
+                SupportMessage.objects
+                .values('user')
+                .annotate(
+                    last_at=Max('created_at'),
+                    unread=Count('id', filter=Q(is_read=False, sender_is_admin=False)),
+                )
+                .order_by('-last_at')
+            )
+            result = []
+            for t in threads:
+                u = User.objects.get(pk=t['user'])
+                last_msg = SupportMessage.objects.filter(user=u).order_by('-created_at').first()
+                result.append({
+                    'user_id': u.id,
+                    'username': u.username,
+                    'email': u.email,
+                    'unread': t['unread'],
+                    'last_message': last_msg.message[:80] if last_msg else '',
+                    'last_at': last_msg.created_at if last_msg else None,
+                })
+            return Response(result)
+        else:
+            # Mark admin messages as read for this user
+            SupportMessage.objects.filter(user=request.user, sender_is_admin=True, is_read=False).update(is_read=True)
+            msgs = SupportMessage.objects.filter(user=request.user)
+            return Response(SupportMessageSerializer(msgs, many=True).data)
 
     def post(self, request):
-        serializer = SupportTicketSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        ticket = SupportTicket.objects.create(
+        if request.user.is_staff:
+            return Response({'error': 'Admin must reply via /support/<user_id>/reply/'}, status=status.HTTP_400_BAD_REQUEST)
+        msg_text = request.data.get('message', '').strip()
+        if not msg_text:
+            return Response({'error': 'Message cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
+        msg = SupportMessage.objects.create(
             user=request.user,
-            email=serializer.validated_data['email'],
-            subject=serializer.validated_data['subject'],
-            message=serializer.validated_data['message'],
+            sender_is_admin=False,
+            message=msg_text,
         )
+        return Response(SupportMessageSerializer(msg).data, status=status.HTTP_201_CREATED)
 
-        mail_error = None
-        try:
-            send_mail(
-                subject=f"[Support] {ticket.subject}",
-                message=(
-                    f"User: {request.user.email}\n"
-                    f"Reply Email: {ticket.email}\n\n"
-                    f"Message:\n{ticket.message}"
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[settings.SUPPORT_EMAIL],
-                fail_silently=False,
-            )
-        except Exception as exc:
-            mail_error = str(exc)
 
-        data = SupportTicketSerializer(ticket).data
-        data['mail_sent'] = mail_error is None
-        if mail_error:
-            data['mail_error'] = mail_error
-        return Response(data, status=status.HTTP_201_CREATED)
+class SupportUnreadView(APIView):
+    """Returns the number of unread messages for the current user (admin msgs unread)."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        count = SupportMessage.objects.filter(
+            user=request.user,
+            sender_is_admin=True,
+            is_read=False,
+        ).count()
+        return Response({'unread': count})
+
+
+class AdminSupportReplyView(APIView):
+    """Admin only: GET all messages for a user, POST a reply."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        if not request.user.is_staff:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        target = User.objects.filter(pk=user_id).first()
+        if not target:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        # Mark user messages as read for admin
+        SupportMessage.objects.filter(user=target, sender_is_admin=False, is_read=False).update(is_read=True)
+        msgs = SupportMessage.objects.filter(user=target)
+        return Response(SupportMessageSerializer(msgs, many=True).data)
+
+    def post(self, request, user_id):
+        if not request.user.is_staff:
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        target = User.objects.filter(pk=user_id).first()
+        if not target:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        msg_text = request.data.get('message', '').strip()
+        if not msg_text:
+            return Response({'error': 'Message cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
+        msg = SupportMessage.objects.create(
+            user=target,
+            sender_is_admin=True,
+            message=msg_text,
+        )
+        return Response(SupportMessageSerializer(msg).data, status=status.HTTP_201_CREATED)

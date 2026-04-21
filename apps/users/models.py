@@ -77,6 +77,23 @@ class FAQ(models.Model):
         ordering = ['sort_order', '-created_at']
 
 
+class SupportMessage(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='support_messages')
+    sender_is_admin = models.BooleanField(default=False)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        sender = 'Admin' if self.sender_is_admin else self.user.username
+        return f"{sender} -> {self.user.username}: {self.message[:40]}"
+
+    class Meta:
+        verbose_name = 'Support Message'
+        verbose_name_plural = 'Support Messages'
+        ordering = ['created_at']
+
+
 class SupportTicket(models.Model):
     STATUS_CHOICES = [
         ('OPEN', 'Open'),
