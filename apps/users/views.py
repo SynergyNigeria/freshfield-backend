@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from django.conf import settings
 from django.core.mail import send_mail
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from .models import KYCSubmission, UserNotification, FAQ, SupportTicket, SupportMessage
 from .serializers import (
     UserSerializer,
@@ -48,6 +50,60 @@ class LoginView(APIView):
                 'token': token.key
             })
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class MigrationCheckView(APIView):
+    """MVP migration flow: check if account exists and still needs initial password setup."""
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip().lower()
+        if not email:
+            return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email__iexact=email).first()
+        can_setup = bool(user and not user.has_usable_password())
+        return Response({'can_setup_password': can_setup})
+
+
+class MigrationSetPasswordView(APIView):
+    """MVP migration flow: set password for migrated users created without a usable password."""
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip().lower()
+        password = request.data.get('password')
+        password2 = request.data.get('password2')
+
+        if not email:
+            return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not password or not password2:
+            return Response({'error': 'Both password fields are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if password != password2:
+            return Response({'error': 'Passwords do not match.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            return Response({'error': 'Account not eligible for migration setup.'}, status=status.HTTP_400_BAD_REQUEST)
+        if user.has_usable_password():
+            return Response({'error': 'This account already has a password. Please use normal login.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            validate_password(password, user=user)
+        except ValidationError as exc:
+            return Response({'error': ' '.join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(password)
+        user.save(update_fields=['password'])
+
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({
+            'message': 'Password set successfully. You can now sign in.',
+            'user': UserSerializer(user).data,
+            'token': token.key,
+        })
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
